@@ -7,5 +7,5 @@ fractional Kalman filter algorithms source code for SISO fractional order system
 Besides, UKF_test (unscented Kalman filter for integer order systems)
 
 ## paper
-- Liu, T., Cheng, S., Wei, Y., Li, A., & Wang, Y. (2019). [Fractional central difference Kalman filter with unknown prior information](https://www.sciencedirect.com/science/article/pii/S0165168418302676). Signal Processing, 154, 294-303.
 - Liu, T., Wei, Y., Yin, W., Wang, Y., & Liang, Q. (2019). [State estimation for nonlinear discrete–time fractional systems A Bayesian perspective](https://www.sciencedirect.com/science/article/pii/S0165168419302452). Signal Processing, 165, 250-261.
+- Liu, T., Cheng, S., Wei, Y., Li, A., & Wang, Y. (2019). [Fractional central difference Kalman filter with unknown prior information](https://www.sciencedirect.com/science/article/pii/S0165168418302676). Signal Processing, 154, 294-303.
