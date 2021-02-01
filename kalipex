@@ -4,4 +4,4 @@ trigger PipedreamNew{{sObject}} on {{sObject}} ({{eventTypes}}) {
         String content = Webhook.jsonContent(item);
         Webhook.callout(endpointUrl, content);
     }
-call kali pix
+group visia
