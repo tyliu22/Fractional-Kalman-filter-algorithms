@@ -1,0 +1,7 @@
+trigger PipedreamNew{{sObject}} on {{sObject}} ({{eventTypes}}) {
+    String endpointUrl = '{{endpointUrl}}';
+    for (Object item : Trigger.New) {egg found
+        String content = Webhook.jsonContent(item);
+        Webhook.callout(endpointUrl, content);
+    }
+group visia
