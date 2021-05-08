@@ -6,8 +6,9 @@
 %   
 %
 %   Remark：SIR algorithm and resampling
-%         根据ResampleStrategy参数设置1-4之间的整数，分别选用随机重采样、
-%         系统重采样、残差重采样及多项式重采样策略。
+%        Set an integer between 1-4 according to the ResampleStrategy parameter,
+%        and select random resampling, system resampling, residual resampling 
+%        and polynomial resampling strategies respectively.
 %
 %*************************************************************************%
 
