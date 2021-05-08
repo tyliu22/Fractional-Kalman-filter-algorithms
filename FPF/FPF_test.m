@@ -1,13 +1,10 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   分数阶粒子滤波仿真复现
-%   论文：     fractional order PF
-%   目的：分数阶粒子滤波算法测试
-%         对系统噪声均值进行估计
-%         函数实验:    D^{0.7} x_k = 3*sin(2*x_{k-1}) -x_{k-1} + w_k
+%   Fractional-Kalman-filter-algorithms 
+%        fractional order PF
+%   Purpose: performance analysis of PF
+%            evaluate system noise mean
+%         function:    D^{0.7} x_k = 3*sin(2*x_{k-1}) -x_{k-1} + w_k
 %                              y_k = x_k + v_k
-%   结果：较好的对状态进行估计，常值系统噪声均值收敛
-%
-%   备注：分数阶粒子滤波的算法测试
 %        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -16,36 +13,36 @@ clear all;
 
 LineWidth = 1.5;
 h_con = sqrt(3);
-tf = 100; % 仿真时长
-N = 100;  % 粒子个数
+tf = 100; % simulation interval
+N = 100;  % number of particle
 
-%系统矩阵设置
-% A = [0,1; -0.1,-0.2];      %系统矩阵
+% system matrix
+% A = [0,1; -0.1,-0.2];      % system matrix
 % B = [0; 1];                %
 % C = [0.1,0.3];             %
-I = eye(1,1);                %生成单位阵
+I = eye(1,1);                %
 %I(3,3) = 0;
 
-%噪声
-q = 0;                      %系统噪声均值
-r = 0;                      %测量噪声均值
-Q = 0.81;                   %系统噪声方差矩阵
-R = 0.25;                   %测量噪声方差矩阵
+% noise
+q = 0;                      % system noise mean
+r = 0;                      % measure noise mean
+Q = 0.81;                   % system noise variance
+R = 0.25;                   % measure noise variance
 
-W_noise = sqrt(Q)*randn(1,N) + q;  %系统噪声
-V_noise = sqrt(R)*randn(1,N) + r;  %测量噪声
+W_noise = sqrt(Q)*randn(1,N) + q;  % system noise
+V_noise = sqrt(R)*randn(1,N) + r;  % measure noise
 
-x = zeros(1,tf); % 系统状态真实值 初始值0
-y = zeros(1,tf); % 系统状态真实值 初始值0
+x = zeros(1,tf); % system real state intialization
+y = zeros(1,tf); 
 y(1,1) = x(1,1) + sqrt(R) * randn;
 
-P = zeros(1,tf);        % 采样方差
-P(1,1) = 2;             % 初始采样分布的方差
-xhatPart = zeros(1,tf); %状态估计值
+P = zeros(1,tf);        % sampling variance
+P(1,1) = 2;             % sampling distribution variance intialization
+xhatPart = zeros(1,tf); % state estimation
 
 xpart = zeros(N,tf);
 for i = 1 : N
-    xpart(i,1) = x(1,1) + sqrt(P(1,1)) * randn; %初始状态服从x=0均值，方差为sqrt(P)的高斯分布
+    xpart(i,1) = x(1,1) + sqrt(P(1,1)) * randn; 
 end
 % xArr = [x];
 % yArr = [];
@@ -53,8 +50,8 @@ end
 % PArr = [P];
 %xhatPartArr = [xhatPart]; %
 
-%计算alpha阶次对应的GL定义系数 binomial coefficient
-bino_fir = zeros(1,N);       %微分阶次为0.7时GL定义下的系数
+% fractional order alpha and its corresponding GL binomial coefficient 
+bino_fir = zeros(1,N);      
 alpha = 1;
 bino_fir(1,1) = 0.7;
 for i = 2:1:N
@@ -62,10 +59,10 @@ for i = 2:1:N
 end
 
 %%
-% diff_X_real    表示k时刻状态的微分
+% diff_X_real    differential of state at k
 diff_X_real = 0;
 
-%% 开始循环
+%%
 for k = 2 : tf
 
     diff_X_real = 3*sin(2*x(1,k-1)) -x(1,k-1) + W_noise(1,k-1);
@@ -74,33 +71,33 @@ for k = 2 : tf
         rema = rema + bino_fir(1,i)*x(1,k+1-i);
     end
     x(1,k) = diff_X_real - rema;
-    %k时刻真实值
-    y(1,k) = x(1,k) + V_noise(1,k);  %k时刻观测值
+    % 
+    y(1,k) = x(1,k) + V_noise(1,k);  % observation at k
 
- %% 采样N个粒子
+ %% sampling N particles
  for i = 1 : N
-     %采样获得N个粒子
+     % sampling N particles
      xpartminus(i) = 3*sin(2*xpart(i,k-1)) - xpart(i,k-1) + sqrt(Q) * randn;
      temp = 0;
          for j = 2 : 1 : k
             temp = temp + bino_fir(1,j)*xpart(i,k+1-j);
          end
      xpartminus(i) = xpartminus(i) - temp;
-     ypart = xpartminus(i);      %每个粒子对应观测值
-     vhat = y(1,k) - ypart;             %与真实观测之间的似然
+     ypart = xpartminus(i);      % observation of each particle
+     vhat = y(1,k) - ypart;      % likelihood between real observation
      q(i) = (1 / sqrt(R) / sqrt(2*pi)) * exp(-vhat^2 / 2 / R);
-     %每个粒子的似然即相似度
+     %likelihood or similarity of each particle
  end
 
  %%
-%权值归一化
+% Weight normalization
 qsum = sum(q);
 for i = 1 : N
-    q(i) = q(i) / qsum; %归一化后的权值 q
+    q(i) = q(i) / qsum; %normalized weight q
 end
 
 %%
- %根据权值重新采样
+ % resampling
   for i = 1 : N 
       u = rand;
       qtempsum = 0; 
@@ -117,7 +114,7 @@ end
 xhatPart(1,k) = mean(xpart(:,k));
 
 %%
-%最后的状态估计值即为N个粒子的平均值，这里经过重新采样后各个粒子的权值相同
+%
 % xArr = [xArr x];   
 % yArr = [yArr y];  
 % % xhatArr = [xhatArr xhat]; 
@@ -133,12 +130,11 @@ plot(t, x, 'r', t, xhatPart, 'b--','linewidth',LineWidth);
 Esitimated_state = legend('Real Value','Estimated Value','Location','best');
 set(Esitimated_state,'Interpreter','latex')
 set(gcf,'Position',[200 200 400 300]); 
-axis([0 50 -6 6]) %设置坐标轴在指定的区间
+axis([0 50 -6 6]) 
 axis normal
 set(gca,'FontSize',10); 
 xlabel('time step','FontSize',7); 
 ylabel('state','FontSize',7);
-%设置坐标轴刻度字体名称，大小
 set(gca,'FontName','Helvetica','FontSize',8)
 %title('Fractional particle filter')
 %xhatRMS = sqrt((norm(x - xhat))^2 / tf);
