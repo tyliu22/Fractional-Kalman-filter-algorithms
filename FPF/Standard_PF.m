@@ -1,71 +1,69 @@
 %*************************************************************************%
-%   Á£×ÓÂË²¨·ÂÕæ¸´ÏÖ
-%   ÂÛÎÄ£ºPF
-%   Ä¿µÄ£ºÁ£×ÓÂË²¨Ëã·¨²âÊÔ
-%         ¶ÔÏµÍ³ÔëÉù¾ùÖµ½øÐÐ¹À¼Æ
-%         º¯ÊýÊµÑé: x_k = 0.5x(k-1) + 2.5x(k-1) / (1+x(k-1)^2) + 8cos(1.2k) + w_k
+%   Particle Filter
+%   Algorithmï¼šPF
+%        function : x_k = 0.5x(k-1) + 2.5x(k-1) / (1+x(k-1)^2) + 8cos(1.2k) + w_k
 %                   y_k = x(k)^2 / 20 +v(k)
-%   ½á¹û£º½ÏºÃµÄ¶Ô×´Ì¬½øÐÐ¹À¼Æ
+%   
 %
-%   ±¸×¢£º·ÂÕæ¹ý³Ì²ÉÓÃ×Ô¾ÙÂË²¨£¨SIRËã·¨£©£¬Ã¿Ò»²½µü´ú¶¼½øÐÐÖØÐÂ³éÑù£¬
-%         ¸ù¾ÝResampleStrategy²ÎÊýÉèÖÃ1-4Ö®¼äµÄÕûÊý£¬·Ö±ðÑ¡ÓÃËæ»úÖØ²ÉÑù¡¢
-%         ÏµÍ³ÖØ²ÉÑù¡¢²Ð²îÖØ²ÉÑù¼°¶àÏîÊ½ÖØ²ÉÑù²ßÂÔ¡£
+%   Remarkï¼šSIR algorithm and resampling
+%         æ ¹æ®ResampleStrategyå‚æ•°è®¾ç½®1-4ä¹‹é—´çš„æ•´æ•°ï¼Œåˆ†åˆ«é€‰ç”¨éšæœºé‡é‡‡æ ·ã€
+%         ç³»ç»Ÿé‡é‡‡æ ·ã€æ®‹å·®é‡é‡‡æ ·åŠå¤šé¡¹å¼é‡é‡‡æ ·ç­–ç•¥ã€‚
 %
 %*************************************************************************%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Á£×ÓÂË²¨Ò»Î¬ÏµÍ³·ÂÕæ
+%% ç²’å­æ»¤æ³¢ä¸€ç»´ç³»ç»Ÿä»¿çœŸ
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function Particle_For_UnlineOneDiv
 clear all;close all;clc;
-randn('seed',1); %ÎªÁË±£Ö¤Ã¿´ÎÔËÐÐ½á¹ûÒ»ÖÂ£¬¸ø¶¨Ëæ»úÊýµÄÖÖ×Óµã
-%³õÊ¼»¯Ïà¹Ø²ÎÊý
-T=50;%²ÉÑùµãÊý
-dt=1;%²ÉÑùÖÜÆÚ
-Q=10;%¹ý³ÌÔëÉù·½²î
-R=1;%²âÁ¿ÔëÉù·½²î
-v=sqrt(R)*randn(T,1);%²âÁ¿ÔëÉù
-w=sqrt(Q)*randn(T,1);%¹ý³ÌÔëÉù
-numSamples=100;%Á£×ÓÊý
-ResampleStrategy=4;%=1ÎªËæ»ú²ÉÑù£¬=2ÎªÏµÍ³²ÉÑù
+randn('seed',1); %ä¸ºäº†ä¿è¯æ¯æ¬¡è¿è¡Œç»“æžœä¸€è‡´ï¼Œç»™å®šéšæœºæ•°çš„ç§å­ç‚¹
+%åˆå§‹åŒ–ç›¸å…³å‚æ•°
+T=50;%é‡‡æ ·ç‚¹æ•°
+dt=1;%é‡‡æ ·å‘¨æœŸ
+Q=10;%è¿‡ç¨‹å™ªå£°æ–¹å·®
+R=1;%æµ‹é‡å™ªå£°æ–¹å·®
+v=sqrt(R)*randn(T,1);%æµ‹é‡å™ªå£°
+w=sqrt(Q)*randn(T,1);%è¿‡ç¨‹å™ªå£°
+numSamples=100;%ç²’å­æ•°
+ResampleStrategy=4;%=1ä¸ºéšæœºé‡‡æ ·ï¼Œ=2ä¸ºç³»ç»Ÿé‡‡æ ·
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-x0=0.1;%³õÊ¼×´Ì¬
-%²úÉúÕæÊµ×´Ì¬ºÍ¹Û²âÖµ
-X=zeros(T,1);%ÕæÊµ×´Ì¬
-Z=zeros(T,1);%Á¿²â
-X(1,1)=x0;%ÕæÊµ×´Ì¬³õÊ¼»¯
-Z(1,1)=(X(1,1)^2)./20+v(1,1);%¹Û²âÖµ³õÊ¼»¯
+x0=0.1;%åˆå§‹çŠ¶æ€
+%äº§ç”ŸçœŸå®žçŠ¶æ€å’Œè§‚æµ‹å€¼
+X=zeros(T,1);%çœŸå®žçŠ¶æ€
+Z=zeros(T,1);%é‡æµ‹
+X(1,1)=x0;%çœŸå®žçŠ¶æ€åˆå§‹åŒ–
+Z(1,1)=(X(1,1)^2)./20+v(1,1);%è§‚æµ‹å€¼åˆå§‹åŒ–
 for k=2:T
-    %×´Ì¬·½³Ì
+    %çŠ¶æ€æ–¹ç¨‹
     X(k,1)=0.5*X(k-1,1)+2.5*X(k-1,1)/(1+X(k-1,1)^2)+8*cos(1.2*k)+w(k-1,1);
-    %¹Û²â·½³Ì
+    %è§‚æµ‹æ–¹ç¨‹
     Z(k,1)=(X(k,1).^2)./20+v(k,1);
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Á£×ÓÂË²¨Æ÷³õÊ¼»¯£¬ÐèÒªÉèÖÃÓÃÓÚ´æ·ÅÂË²¨¹À¼Æ×´Ì¬£¬Á£×Ó¼¯ºÏ£¬È¨ÖØµÈÊý×é
-Xpf=zeros(numSamples,T);%Á£×ÓÂË²¨¹À¼Æ×´Ì¬
-Xparticles=zeros(numSamples,T);%Á£×Ó¼¯ºÏ
-Zpre_pf=zeros(numSamples,T);%Á£×ÓÂË²¨¹Û²âÔ¤²âÖµ
-weight=zeros(numSamples,T);%È¨ÖØ³õÊ¼»¯
-%¸ø¶¨×´Ì¬ºÍ¹Û²âÔ¤²âµÄ³õÊ¼²ÉÑù£º
+%ç²’å­æ»¤æ³¢å™¨åˆå§‹åŒ–ï¼Œéœ€è¦è®¾ç½®ç”¨äºŽå­˜æ”¾æ»¤æ³¢ä¼°è®¡çŠ¶æ€ï¼Œç²’å­é›†åˆï¼Œæƒé‡ç­‰æ•°ç»„
+Xpf=zeros(numSamples,T);%ç²’å­æ»¤æ³¢ä¼°è®¡çŠ¶æ€
+Xparticles=zeros(numSamples,T);%ç²’å­é›†åˆ
+Zpre_pf=zeros(numSamples,T);%ç²’å­æ»¤æ³¢è§‚æµ‹é¢„æµ‹å€¼
+weight=zeros(numSamples,T);%æƒé‡åˆå§‹åŒ–
+%ç»™å®šçŠ¶æ€å’Œè§‚æµ‹é¢„æµ‹çš„åˆå§‹é‡‡æ ·ï¼š
 Xpf(:,1)=x0+sqrt(Q)*randn(numSamples,1);
 Zpre_pf(:,1)=Xpf(:,1).^2/20;
-%¸üÐÂÓëÔ¤²â¹ý³Ì
+%æ›´æ–°ä¸Žé¢„æµ‹è¿‡ç¨‹
 for k=2:T
-    %µÚÒ»²½£ºÁ£×Ó¼¯ºÏ²ÉÑù¹ý³Ì
+    %ç¬¬ä¸€æ­¥ï¼šç²’å­é›†åˆé‡‡æ ·è¿‡ç¨‹
     for i=1:numSamples
-        QQ=Q;%¸ú¿¨¶ûÂüÂË²¨²»Í¬£¬ÕâÀïµÄQ²»ÒªÇóÓë¹ý³ÌÔëÉù·½²îÒ»ÖÂ
-        net=sqrt(QQ)*randn;%ÕâÀïµÄQQ¿ÉÒÔ¿´³ÉÊÇÍøµÄ°ë¾¶£¬ÊýÖµ¿Éµ÷
+        QQ=Q;%è·Ÿå¡å°”æ›¼æ»¤æ³¢ä¸åŒï¼Œè¿™é‡Œçš„Qä¸è¦æ±‚ä¸Žè¿‡ç¨‹å™ªå£°æ–¹å·®ä¸€è‡´
+        net=sqrt(QQ)*randn;%è¿™é‡Œçš„QQå¯ä»¥çœ‹æˆæ˜¯ç½‘çš„åŠå¾„ï¼Œæ•°å€¼å¯è°ƒ
         Xparticles(i,k)=0.5.*Xpf(i,k-1)+2.5.*Xpf(i,k-1)./(1+Xpf(i,k-1).^2)+8*cos(1.2*k)+net;
     end
-    %µÚ¶þ²½£º¶ÔÁ£×Ó¼¯ºÏÖÐµÄÃ¿¸öÁ£×Ó£¬¼ÆËãÆäÖØÒªÐÔÈ¨Öµ
+    %ç¬¬äºŒæ­¥ï¼šå¯¹ç²’å­é›†åˆä¸­çš„æ¯ä¸ªç²’å­ï¼Œè®¡ç®—å…¶é‡è¦æ€§æƒå€¼
     for i=1:numSamples
         Zpre_pf(i,k)=Xparticles(i,k)^2/20;
-        weight(i,k)=exp( -.5*R^(-1) * (Z(k,1)-Zpre_pf(i,k))^2 );%Ê¡ÂÔÁË³£ÊýÏî
+        weight(i,k)=exp( -.5*R^(-1) * (Z(k,1)-Zpre_pf(i,k))^2 );%çœç•¥äº†å¸¸æ•°é¡¹
     end
-    weight(:,k)=weight(:,k)./sum(weight(:,k));%¹éÒ»»¯È¨Öµ
-    %µÚÈý²½£º¸ù¾ÝÈ¨Öµ´óÐ¡¶ÔÁ£×Ó¼¯ºÏÖØ²ÉÑù£¬È¨Öµ¼¯ºÏºÍÁ£×Ó¼¯ºÏÊÇÒ»Ò»¶ÔÓ¦µÄ
-    %Ñ¡Ôñ²ÉÑù²ßÂÔ
+    weight(:,k)=weight(:,k)./sum(weight(:,k));%å½’ä¸€åŒ–æƒå€¼
+    %ç¬¬ä¸‰æ­¥ï¼šæ ¹æ®æƒå€¼å¤§å°å¯¹ç²’å­é›†åˆé‡é‡‡æ ·ï¼Œæƒå€¼é›†åˆå’Œç²’å­é›†åˆæ˜¯ä¸€ä¸€å¯¹åº”çš„
+    %é€‰æ‹©é‡‡æ ·ç­–ç•¥
     if ResampleStrategy==1
         outIndex = randomR(weight(:,k));
     elseif ResampleStrategy==2
@@ -75,84 +73,84 @@ for k=2:T
     elseif ResampleStrategy==4
         outIndex = residualR(weight(:,k)');
     end
-    %µÚËÄ²½£º¸ù¾ÝÖØ²ÉÑùµÃµ½µÄË÷Òý£¬È¥ÌôÑ¡¶ÔÓ¦µÄÁ£×Ó£¬ÖØ¹¹µÄ¼¯ºÏ±ãÊÇÂË²¨ºóµÄ×´Ì¬¼¯ºÏ
-    %¶ÔÕâ¸ö×´Ì¬¼¯ºÏÇó¾ùÖµ£¬¾ÍÊÇ×îÖÕµÄÄ¿±ê×´Ì¬¡¢
+    %ç¬¬å››æ­¥ï¼šæ ¹æ®é‡é‡‡æ ·å¾—åˆ°çš„ç´¢å¼•ï¼ŒåŽ»æŒ‘é€‰å¯¹åº”çš„ç²’å­ï¼Œé‡æž„çš„é›†åˆä¾¿æ˜¯æ»¤æ³¢åŽçš„çŠ¶æ€é›†åˆ
+    %å¯¹è¿™ä¸ªçŠ¶æ€é›†åˆæ±‚å‡å€¼ï¼Œå°±æ˜¯æœ€ç»ˆçš„ç›®æ ‡çŠ¶æ€ã€
     Xpf(:,k)=Xparticles(outIndex,k);
 end
-%¼ÆËãºóÑé¾ùÖµ¹À¼Æ¡¢×î´óºóÑé¹À¼Æ¼°¹À¼Æ·½²î
-Xmean_pf=mean(Xpf);%ºóÑé¾ùÖµ¹À¼Æ£¬¼°ÉÏÃæµÄµÚËÄ²½£¬Ò²¼´Á£×ÓÂË²¨¹À¼ÆµÄ×îÖÕ×´Ì¬
+%è®¡ç®—åŽéªŒå‡å€¼ä¼°è®¡ã€æœ€å¤§åŽéªŒä¼°è®¡åŠä¼°è®¡æ–¹å·®
+Xmean_pf=mean(Xpf);%åŽéªŒå‡å€¼ä¼°è®¡ï¼ŒåŠä¸Šé¢çš„ç¬¬å››æ­¥ï¼Œä¹Ÿå³ç²’å­æ»¤æ³¢ä¼°è®¡çš„æœ€ç»ˆçŠ¶æ€
 bins=20;
 Xmap_pf=zeros(T,1);
 for k=1:T
     [p,pos]=hist(Xpf(:,k,1),bins);
     map=find(p==max(p));
-    Xmap_pf(k,1)=pos(map(1));%×î´óºóÑé¹À¼Æ
+    Xmap_pf(k,1)=pos(map(1));%æœ€å¤§åŽéªŒä¼°è®¡
 end
 for k=1:T
-    Xstd_pf(1,k)=std(Xpf(:,k)-X(k,1));%ºóÑéÎó²î±ê×¼²î¹À¼Æ
+    Xstd_pf(1,k)=std(Xpf(:,k)-X(k,1));%åŽéªŒè¯¯å·®æ ‡å‡†å·®ä¼°è®¡
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%»­Í¼
-figure();clf;%¹ý³ÌÔëÉùºÍ²âÁ¿ÔëÉùÍ¼
+%ç”»å›¾
+figure();clf;%è¿‡ç¨‹å™ªå£°å’Œæµ‹é‡å™ªå£°å›¾
 subplot(221);
-plot(v);%²âÁ¿ÔëÉù
-xlabel('Ê±¼ä');ylabel('²âÁ¿ÔëÉù');
+plot(v);%æµ‹é‡å™ªå£°
+xlabel('æ—¶é—´');ylabel('æµ‹é‡å™ªå£°');
 subplot(222);
-plot(w);%¹ý³ÌÔëÉù
-xlabel('Ê±¼ä');ylabel('¹ý³ÌÔëÉù');
+plot(w);%è¿‡ç¨‹å™ªå£°
+xlabel('æ—¶é—´');ylabel('è¿‡ç¨‹å™ªå£°');
 subplot(223);
-plot(X);%ÕæÊµ×´Ì¬
-xlabel('Ê±¼ä');ylabel('×´Ì¬X');
+plot(X);%çœŸå®žçŠ¶æ€
+xlabel('æ—¶é—´');ylabel('çŠ¶æ€X');
 subplot(224);
-plot(Z);%¹Û²âÖµ
-xlabel('Ê±¼ä');ylabel('¹Û²âZ');
+plot(Z);%è§‚æµ‹å€¼
+xlabel('æ—¶é—´');ylabel('è§‚æµ‹Z');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure();
 k=1:dt:T;
-plot(k,X,'b',k,Xmean_pf,'r',k,Xmap_pf,'g');%×¢£ºXmean_pf¾ÍÊÇÁ£×ÓÂË²¨½á¹û
-legend('ÏµÍ³ÕæÊµ×´Ì¬Öµ','ºóÑé¾ùÖµ¹À¼Æ','×î´óºóÑé¸ÅÂÊ¹À¼Æ');
-xlabel('Ê±¼ä');ylabel('×´Ì¬¹À¼Æ');
+plot(k,X,'b',k,Xmean_pf,'r',k,Xmap_pf,'g');%æ³¨ï¼šXmean_pfå°±æ˜¯ç²’å­æ»¤æ³¢ç»“æžœ
+legend('ç³»ç»ŸçœŸå®žçŠ¶æ€å€¼','åŽéªŒå‡å€¼ä¼°è®¡','æœ€å¤§åŽéªŒæ¦‚çŽ‡ä¼°è®¡');
+xlabel('æ—¶é—´');ylabel('çŠ¶æ€ä¼°è®¡');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure();
 subplot(121);
-plot(Xmean_pf,X,'+');%Á£×ÓÂË²¨¹À¼ÆÖµÓëÕæÊµ×´Ì¬ÖµÈç³É1:1¹ØÏµ£¬Ôò»á¶Ô³Æ·Ö²¼
-xlabel('ºóÑé¾ùÖµ¹À¼Æ');ylabel('ÕæÖµ');
+plot(Xmean_pf,X,'+');%ç²’å­æ»¤æ³¢ä¼°è®¡å€¼ä¸ŽçœŸå®žçŠ¶æ€å€¼å¦‚æˆ1:1å…³ç³»ï¼Œåˆ™ä¼šå¯¹ç§°åˆ†å¸ƒ
+xlabel('åŽéªŒå‡å€¼ä¼°è®¡');ylabel('çœŸå€¼');
 hold on;
 c=-25:1:25;
-plot(c,c,'r');%»­ºìÉ«µÄ¶Ô³ÆÏßy=x
+plot(c,c,'r');%ç”»çº¢è‰²çš„å¯¹ç§°çº¿y=x
 hold off;
-subplot(122);%×î´óºóÑé¹À¼ÆÖµÓëÕæÊµ×´Ì¬ÖµÈç³É1:1¹ØÏµ£¬Ôò»á¶Ô³Æ·Ö²¼
+subplot(122);%æœ€å¤§åŽéªŒä¼°è®¡å€¼ä¸ŽçœŸå®žçŠ¶æ€å€¼å¦‚æˆ1:1å…³ç³»ï¼Œåˆ™ä¼šå¯¹ç§°åˆ†å¸ƒ
 plot(Xmap_pf,X,'+');
-xlabel('Map¹À¼Æ');ylabel('ÕæÖµ');
+xlabel('Mapä¼°è®¡');ylabel('çœŸå€¼');
 hold on;
 c=-25:25;
-plot(c,c,'r');%»­ºìÉ«µÄ¶Ô³ÆÏßy=x
+plot(c,c,'r');%ç”»çº¢è‰²çš„å¯¹ç§°çº¿y=x
 hold off;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%»­Ö±·½Í¼£¬´ËÍ¼ÐÎÊÇÎªÁË¿´Á£×Ó¼¯µÄºóÑéÃÜ¶È
+%ç”»ç›´æ–¹å›¾ï¼Œæ­¤å›¾å½¢æ˜¯ä¸ºäº†çœ‹ç²’å­é›†çš„åŽéªŒå¯†åº¦
 domain=zeros(numSamples,1);
 range=zeros(numSamples,1);
 bins=10;
 support=[-20:1:20];
 figure();
-hold on;%Ö±·½Í¼
-xlabel('Ê±¼ä');ylabel('Ñù±¾¿Õ¼ä');
+hold on;%ç›´æ–¹å›¾
+xlabel('æ—¶é—´');ylabel('æ ·æœ¬ç©ºé—´');
 vect=[0 1];
 caxis(vect);
 for k=1:T
-    %Ö±·½Í¼·´Ó³ÂË²¨ºóµÄÁ£×Ó¼¯ºÏµÄ·Ö²¼Çé¿ö
+    %ç›´æ–¹å›¾åæ˜ æ»¤æ³¢åŽçš„ç²’å­é›†åˆçš„åˆ†å¸ƒæƒ…å†µ
     [range,domain]=hist(Xpf(:,k),support);
-    %µ÷ÓÃwaterfallº¯Êý£¬½«Ö±·½Í¼·Ö²¼µÄÊý¾Ý»­³öÀ´
+    %è°ƒç”¨waterfallå‡½æ•°ï¼Œå°†ç›´æ–¹å›¾åˆ†å¸ƒçš„æ•°æ®ç”»å‡ºæ¥
     waterfall(domain,k,range);
 end
 axis([-20 20 0 T 0 100]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure();
-xlabel('Ñù±¾¿Õ¼ä');ylabel('ºóÑéÃÜ¶È');
-k=30;%k=?±íÊ¾Òª²é¿´µÚ¼¸¸öÊ±¿ÌµÄÁ£×Ó·Ö²¼ÓëÕæÊµ×´Ì¬ÖµµÄÖØµþ¹ØÏµ
+xlabel('æ ·æœ¬ç©ºé—´');ylabel('åŽéªŒå¯†åº¦');
+k=30;%k=?è¡¨ç¤ºè¦æŸ¥çœ‹ç¬¬å‡ ä¸ªæ—¶åˆ»çš„ç²’å­åˆ†å¸ƒä¸ŽçœŸå®žçŠ¶æ€å€¼çš„é‡å å…³ç³»
 [range,domain]=hist(Xpf(:,k),support);
 plot(domain,range);
-%ÕæÊµ×´Ì¬ÔÚÑù±¾¿Õ¼äÖÐµÄÎ»ÖÃ£¬»­Ò»ÌõºìÉ«Ö±Ïß±íÊ¾
+%çœŸå®žçŠ¶æ€åœ¨æ ·æœ¬ç©ºé—´ä¸­çš„ä½ç½®ï¼Œç”»ä¸€æ¡çº¢è‰²ç›´çº¿è¡¨ç¤º
 XXX=[X(k,1),X(k,1)];
 YYY=[0,max(range)+10];
 line(XXX,YYY,'Color','r');
@@ -160,63 +158,63 @@ axis([min(domain) max(domain) 0 max(range)+10]);
 figure();
 k=1:dt:T;
 plot(k,Xstd_pf,'-');
-xlabel('Ê±¼ä');ylabel('×´Ì¬¹À¼ÆÎó²î±ê×¼²î');
+xlabel('æ—¶é—´');ylabel('çŠ¶æ€ä¼°è®¡è¯¯å·®æ ‡å‡†å·®');
 axis([0,T,0,10]);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%º¯Êý¹¦ÄÜ£ºÊµÏÖËæ»úÖØ²ÉÑùËã·¨
-%ÊäÈë²ÎÊý£ºweightÎªÔ­Ê¼Êý¾Ý¶ÔÓ¦µÄÈ¨ÖØ´óÐ¡
-%Êä³ö²ÎÊý£ºoutIndexÊÇ¸ù¾Ýweight¶ÔinIndexÉ¸Ñ¡ºÍ¸´ÖÆ½á¹û
+%å‡½æ•°åŠŸèƒ½ï¼šå®žçŽ°éšæœºé‡é‡‡æ ·ç®—æ³•
+%è¾“å…¥å‚æ•°ï¼šweightä¸ºåŽŸå§‹æ•°æ®å¯¹åº”çš„æƒé‡å¤§å°
+%è¾“å‡ºå‚æ•°ï¼šoutIndexæ˜¯æ ¹æ®weightå¯¹inIndexç­›é€‰å’Œå¤åˆ¶ç»“æžœ
 function outIndex=randomR(weight)
-%»ñµÃÊý¾ÝµÄ³¤¶È
+%èŽ·å¾—æ•°æ®çš„é•¿åº¦
 L=length(weight);
-%³õÊ¼»¯Êä³öË÷ÒýÏòÁ¿£¬³¤¶ÈÓëÊäÈëË÷ÒýÏòÁ¿ÏàµÈ
+%åˆå§‹åŒ–è¾“å‡ºç´¢å¼•å‘é‡ï¼Œé•¿åº¦ä¸Žè¾“å…¥ç´¢å¼•å‘é‡ç›¸ç­‰
 outIndex=zeros(1,L);
-%µÚÒ»²½£º²úÉú[0,1]ÉÏ¾ùÔÈ·Ö²¼µÄËæ»úÊý×é£¬²¢ÉýÐòÅÅÐò
+%ç¬¬ä¸€æ­¥ï¼šäº§ç”Ÿ[0,1]ä¸Šå‡åŒ€åˆ†å¸ƒçš„éšæœºæ•°ç»„ï¼Œå¹¶å‡åºæŽ’åº
 u=unifrnd(0,1,1,L);
 u=sorf(u);
-%u=(1:L)/L%Õâ¸öÊÇÍêÈ«¾ùÔÈ
-%µÚ¶þ²½£º¼ÆËãÁ£×ÓÈ¨ÖØ»ýÀÛº¯Êýcdf
+%u=(1:L)/L%è¿™ä¸ªæ˜¯å®Œå…¨å‡åŒ€
+%ç¬¬äºŒæ­¥ï¼šè®¡ç®—ç²’å­æƒé‡ç§¯ç´¯å‡½æ•°cdf
 cdf=cumsum(weight);
-%µÚÈý²½£ººËÐÄ¼ÆËã
+%ç¬¬ä¸‰æ­¥ï¼šæ ¸å¿ƒè®¡ç®—
 i=1;
 for j=1:L
-    %´Ë´¦µÄ»ù±¾Ô­ÀíÊÇ£ºuÊÇ¾ùÔÈµÄ£¬±ØÈ»ÊÇÈ¨Öµ´óµÄµØ·½
-    %ÓÐ¸ü¶àµÄËæ»úÊýÂäÈë¸ÃÇø¼ä£¬Òò´Ë»á±»¶à´Î¸´ÖÆ
+    %æ­¤å¤„çš„åŸºæœ¬åŽŸç†æ˜¯ï¼šuæ˜¯å‡åŒ€çš„ï¼Œå¿…ç„¶æ˜¯æƒå€¼å¤§çš„åœ°æ–¹
+    %æœ‰æ›´å¤šçš„éšæœºæ•°è½å…¥è¯¥åŒºé—´ï¼Œå› æ­¤ä¼šè¢«å¤šæ¬¡å¤åˆ¶
     while(i<=L)&(u(i)<=cdf(j))
-        %¸´ÖÆÈ¨Öµ´óµÄÁ£×Ó
+        %å¤åˆ¶æƒå€¼å¤§çš„ç²’å­
         outIndex(i)=j;
-        %¼ÌÐø¿¼²ìÏÂÒ»¸öËæ»úÊý£¬¿´ËüÂäÔÚÄÄ¸öÇø¼ä
+        %ç»§ç»­è€ƒå¯Ÿä¸‹ä¸€ä¸ªéšæœºæ•°ï¼Œçœ‹å®ƒè½åœ¨å“ªä¸ªåŒºé—´
         i=i+1;
     end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ¶àÏîÊ½ÖØ²ÉÑù×Óº¯Êý
-% ÊäÈë²ÎÊý£ºweightÎªÔ­Ê¼Êý¾Ý¶ÔÓ¦µÄÈ¨ÖØ´óÐ¡
-% Êä³ö²ÎÊý£ºoutIndexÊÇ¸ù¾ÝweightÉ¸Ñ¡ºÍ¸´ÖÆ½á¹û
+% å¤šé¡¹å¼é‡é‡‡æ ·å­å‡½æ•°
+% è¾“å…¥å‚æ•°ï¼šweightä¸ºåŽŸå§‹æ•°æ®å¯¹åº”çš„æƒé‡å¤§å°
+% è¾“å‡ºå‚æ•°ï¼šoutIndexæ˜¯æ ¹æ®weightç­›é€‰å’Œå¤åˆ¶ç»“æžœ
 function outIndex = multinomialR(weight);
-%»ñÈ¡Êý¾Ý³¤¶È
+%èŽ·å–æ•°æ®é•¿åº¦
 Col=length(weight)
 N_babies= zeros(1,Col);
 
-%¼ÆËãÁ£×ÓÈ¨ÖØÀÛ¼Æº¯Êýcdf 
+%è®¡ç®—ç²’å­æƒé‡ç´¯è®¡å‡½æ•°cdf 
 cdf= cumsum(weight);
- %²úÉú[0,1]¾ùÔÈ·Ö²¼µÄËæ»úÊý
+ %äº§ç”Ÿ[0,1]å‡åŒ€åˆ†å¸ƒçš„éšæœºæ•°
 u=rand(1,Col)
 
-%Çóu^(j^-1)´Î·½ 
+%æ±‚u^(j^-1)æ¬¡æ–¹ 
 uu=u.^(1./(Col:-1:1))
- %Èç¹ûAÊÇÒ»¸öÏòÁ¿£¬cumprod(A)½«·µ»ØÒ»¸ö°üº¬A¸÷ÔªËØ»ýÀÛÁ¬³ËµÄ½á¹ûµÄÏòÁ¿
- %ÔªËØ¸öÊýÓëÔ­ÏòÁ¿ÏàÍ¬
+ %å¦‚æžœAæ˜¯ä¸€ä¸ªå‘é‡ï¼Œcumprod(A)å°†è¿”å›žä¸€ä¸ªåŒ…å«Aå„å…ƒç´ ç§¯ç´¯è¿žä¹˜çš„ç»“æžœçš„å‘é‡
+ %å…ƒç´ ä¸ªæ•°ä¸ŽåŽŸå‘é‡ç›¸åŒ
 ArrayTemp=cumprod(uu)
- %fliplr(X)Ê¹¾ØÕóXÑØ´¹Ö±Öá×óÓÒ·­×ª
+ %fliplr(X)ä½¿çŸ©é˜µXæ²¿åž‚ç›´è½´å·¦å³ç¿»è½¬
 u = fliplr(ArrayTemp);
 j=1;
 for i=1:Col
-    %´Ë´¦¸úËæ»ú²ÉÑùÏàËÆ
+    %æ­¤å¤„è·Ÿéšæœºé‡‡æ ·ç›¸ä¼¼
     while (u(i)>cdf(j))
         j=j+1;
     end
@@ -234,9 +232,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% º¯Êý¹¦ÄÜËµÃ÷£º²Ð²îÖØ²ÉÑùº¯Êý
-% ÊäÈë²ÎÊý£ºÒ»×éÈ¨ÖØweightÏòÁ¿
-% Êä³ö²ÎÊý£ºÎª¸ÃÈ¨ÖØÖØ²ÉÑùºóµÄË÷ÒýoutIndex
+% å‡½æ•°åŠŸèƒ½è¯´æ˜Žï¼šæ®‹å·®é‡é‡‡æ ·å‡½æ•°
+% è¾“å…¥å‚æ•°ï¼šä¸€ç»„æƒé‡weightå‘é‡
+% è¾“å‡ºå‚æ•°ï¼šä¸ºè¯¥æƒé‡é‡é‡‡æ ·åŽçš„ç´¢å¼•outIndex
 function outIndex = residualR(weight)
 N= length(weight);
 N_babies= zeros(1,N);
@@ -267,9 +265,9 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ÏµÍ³ÖØ²ÉÑù×Óº¯Êý
-% ÊäÈë²ÎÊý£ºweightÎªÔ­Ê¼Êý¾Ý¶ÔÓ¦µÄÈ¨ÖØ´óÐ¡
-% Êä³ö²ÎÊý£ºoutIndexÊÇ¸ù¾ÝweightÉ¸Ñ¡ºÍ¸´ÖÆ½á¹û
+% ç³»ç»Ÿé‡é‡‡æ ·å­å‡½æ•°
+% è¾“å…¥å‚æ•°ï¼šweightä¸ºåŽŸå§‹æ•°æ®å¯¹åº”çš„æƒé‡å¤§å°
+% è¾“å‡ºå‚æ•°ï¼šoutIndexæ˜¯æ ¹æ®weightç­›é€‰å’Œå¤åˆ¶ç»“æžœ
 function outIndex = systematicR(weight);
 N=length(weight);
 N_children=zeros(1,N);
