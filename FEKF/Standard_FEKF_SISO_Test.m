@@ -1,85 +1,82 @@
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%   ·ÖÊı½×¿¨¶ûÂüÂË²¨Æ÷·ÂÕæ¸´ÏÖ
-%   ÂÛÎÄ£º     fractional order EKF
-%   Ä¿µÄ£ºFCDKFÓëFEKFµÄĞÔÄÜ±È½Ï
-%         º¯ÊıÊµÑé:    D^{0.7} x_k = 3*sin(2*x_{k-1}) -x_{k-1} + w_k
-%                              y_k = x_k + v_k
-%   ½á¹û£º
+%   Fractional-Kalman-filter-algorithms
+%   Paperï¼š     fractional order EKF
+%   Purposeï¼šperformance analysis between FCDKF and FEKF
+%   Example fucntion:    D^{0.7} x_k = 3*sin(2*x_{k-1}) -x_{k-1} + w_k
+%                                y_k = x_k + v_k
+%   Resultï¼š
 %
-%   ±¸×¢£º
+%   Remarkï¼š
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 clc
 clear
 
-%·ÂÕæ²½³¤
+%ä»¿çœŸæ­¥é•¿
 N = 50;
 
-q = 1;                   %ÏµÍ³ÔëÉù¾ùÖµ
-r = 1;                   %²âÁ¿ÔëÉù¾ùÖµ
-Q = 0.81;                %ÏµÍ³ÔëÉù·½²î¾ØÕó
-R = 0.25;                %²âÁ¿ÔëÉù·½²î¾ØÕó
+q = 1;                   % system noise mean
+r = 1;                   % measure noise mean
+Q = 0.81;                % system noise variance
+R = 0.25;                % measure noise variance
 
-%GL¶¨ÒåÏÂ¶Ì¼ÇÒäÔ­ÀíµÄ³¤¶È
+% short memory length under GL fractional definition
 L = N+1;
 
-%¼ÆËãalpha½×´Î¶ÔÓ¦µÄGL¶¨ÒåÏµÊı binomial coefficient 
-bino_fir = zeros(1,N);       %Î¢·Ö½×´ÎÎª0.7Ê±GL¶¨ÒåÏÂµÄÏµÊı
+% fractional order alpha and its corresponding GL binomial coefficient 
+bino_fir = zeros(1,N);       % Differential order 0.7
 alpha = 0.7;
 bino_fir(1,1) = 1;
 for i = 2:1:N
     bino_fir(1,i) = (1-(alpha+1)/(i-1))*bino_fir(1,i-1);  
 end
 
-%ÏµÍ³¾ØÕóÉèÖÃ
-I = eye(1,1);                %Éú³Éµ¥Î»Õó
+I = eye(1,1);
 
 
-%×´Ì¬²âÁ¿³õÊ¼»¯
-X_real = zeros(1,N);         %ÕæÊµ×´Ì¬
-Z_meas = zeros(1,N);         %Êµ¼Ê¹Û²âÖµ
+% State initialization 
+X_real = zeros(1,N);         % real state
+Z_meas = zeros(1,N);         % real measurement 
 
-%ÔëÉù
-W_noise = sqrt(Q)*randn(1,N) + q;  %ÏµÍ³ÔëÉù
-V_noise = sqrt(R)*randn(1,N) + r;  %²âÁ¿ÔëÉù
+W_noise = sqrt(Q)*randn(1,N) + q;  % system noise
+V_noise = sqrt(R)*randn(1,N) + r;  % measusre noise
 
-x_0  = 0;                    %³õÊ¼×´Ì¬     
-X_real(1,1) = x_0;           %ÕæÊµ×´Ì¬³õÊ¼Öµ
-Z_meas(1,1) = V_noise(1,1);  %²âÁ¿Êı¾İ³õÊ¼Öµ
+x_0  = 0;                    % state initialization     
+X_real(1,1) = x_0;           % real state intialization
+Z_meas(1,1) = V_noise(1,1);  % measurement state intialization
 
-% ÏµÍ³º¯ÊıÓë²âÁ¿º¯Êı
+% system function and measurement function
 f=@(x)3*sin(2*x)-x;
 h=@(x)x;
 
 for k=2:1:N
-    %¼ÆËãÊµ¼Ê×´Ì¬
+    % calculate real state
     diff_X_real = f(X_real(1,k-1)) + W_noise(1,k-1);
     rema = 0;
     for i = 2:1:k
         rema = rema + bino_fir(1,i)*X_real(1,k+1-i);
     end
     X_real(1,k) = diff_X_real - rema;
-    %Êµ¼Ê¹Û²âÖµ
+    % calculate real observation
     Z_meas(1,k) = h(X_real(1,k)) + V_noise(1,k); 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%-----------------------·ÖÊı½×À©Õ¹¿¨¶ûÂüÂË²¨Æ÷ĞÔÄÜ²âÊÔ---------------------%
+%------ Fractional-Kalman-filter-algorithms performance testing ----------%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-X_esti = zeros(1,N);        %×´Ì¬×îÓÅ¹À¼ÆÖµ
-P_xesti = zeros(1,N);       %¹À¼ÆÎó²î·½²îÕó
+X_esti = zeros(1,N);       % state optimal estimation 
+P_xesti = zeros(1,N);      % estiamtion error variance
 
-%³õÊ¼ÖµÉèÖÃ£¨³õÊ¼¾ØÕó²»ÄÜÎªÁã£©
-P_pred_0 = 100;              %³õÊ¼Ô¤²â·½²îÕó
-P_xesti(1,1) = P_pred_0;     %³õÊ¼¹À¼Æ·½²îÕó
+P_pred_0 = 100;              % prediction variance intialization
+P_xesti(1,1) = P_pred_0;     % estimation variance intialization
 
 for k=2:1:N
-  %¿¨¶ûÂüÂË²¨
-      %×´Ì¬Ô¤²â:X_pre
+      % state prediction :X_pre
         diff_X_esti = f(X_esti(1,k-1));
-            %¼ÆËãÓàÏî
+            % calculate remainder term
             rema = 0;
             if k>L
                 for i = 2:1:L+1
@@ -90,9 +87,8 @@ for k=2:1:N
                     rema = rema + bino_fir(1,i)*X_esti(1,k+1-i);
                 end
             end
-        X_pre = diff_X_esti - rema + q;     %Ò»²½×´Ì¬Ô¤²â
-        %Ô¤²âÎó²îĞ­·½²î¾ØÕó:P_pred
-            %¼ÆËãÓàÏî
+        X_pre = diff_X_esti - rema + q;     % first step state prediction
+        % prediction error covariance: P_pred
             rema_P = 0;
             if k>L+1
                 for i = 3:1:L+2
@@ -107,21 +103,20 @@ for k=2:1:N
             
         P_xpred = (F-bino_fir(1,2))*P_xesti(1,k-1)*(F-bino_fir(1,2))'+ Q + rema_P;
         
-        %²âÁ¿Öµ¹À¼Æ  Z_esti ---- Z_k|k-1
+        % measurement estimation  Z_esti ---- Z_k|k-1
         Z_esti = h(X_pre) + r;
         
-        %¼ÆËã¿¨¶ûÂüÔöÒæ:Kk(2*1)
+        % kalman gain: Kk(2*1)
         H = 1;
         Kk = P_xpred*H'/(H*P_xpred*H' + R);
         
-        %×´Ì¬¸üĞÂ
+        % state updating
         X_esti(1,k) = X_pre + Kk*( Z_meas(1,k) - Z_esti );
         
-        %¹À¼Æ·½²î¾ØÕó¸üĞÂ
+        % estimation variance updating
         P_xesti(1,k) = (I-Kk*H)*P_xpred;
 end
 
-%ÊäÈëÓë²âÁ¿Êä³öÍ¼
 k = 1:1:N;
 
 LineWidth = 1.5;
@@ -129,12 +124,11 @@ LineWidth = 1.5;
 figure;
 plot(k,X_real(1,:),'r',k,X_esti(1,:),'b--','linewidth',LineWidth);
 set(gcf,'Position',[200 200 400 300]); 
-% axis([xmin xmax ymin ymax])  ÉèÖÃ×ø±êÖáÔÚÖ¸¶¨µÄÇø¼ä
+% axis([xmin xmax ymin ymax]) 
 axis normal
 axis([0 N -6 6 ])
 ylabel('x','FontSize',8)
 xlabel('time(sec)','FontSize',8)
-% ÉèÖÃ×ø±êÖá¿Ì¶È×ÖÌåÃû³Æ£¬´óĞ¡
 set(gca,'FontName','Helvetica','FontSize',8)
 legend('real state','estimated state','Location','best');
 
